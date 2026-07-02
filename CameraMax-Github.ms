@@ -24,11 +24,6 @@ global CM_RefreshTimer CM_RefreshQueueIndex CM_RefreshRunning
 global CM_RenameCam CM_RenameLabel CM_RenameTextBox CM_NewRowTextBox
 global CM_ColorCls CM_PBSizeMode CM_BorderStyleCls CM_ContentAlignCls CM_MouseButtonsCls CM_FormStartPos CM_DialogResultCls
 
--- Event handler globals
-global CM_OnRefreshClick CM_OnAddRowClick CM_OnOverlayChkChanged CM_OnOverlayComboChanged
-global CM_OnFlipHClick CM_OnFlipVClick CM_OnSearchChanged
-global CM_OnMiRefreshClick CM_OnMiRenameClick CM_OnMiColorClick
-
 struct CamRowData (rowName, rowColor, groupBox, flowPanel)
 struct CamEntryData (cam, picBox, nameLabel, tempFile)
 
@@ -507,6 +502,86 @@ fn CM_ToggleOverlay state =
     if state then registerRedrawViewsCallback CM_DrawGuides
     else unregisterRedrawViewsCallback CM_DrawGuides
     completeRedraw()
+)
+
+-- Button/Checkbox handlers
+fn CM_OnRefreshClick sender e =
+(
+    if CM_RefreshRunning == true then CM_StopRefreshQueue() else CM_StartRefreshQueue()
+)
+
+fn CM_OnAddRowClick sender e =
+(
+    local dlg = dotNetObject "System.Windows.Forms.Form"
+    dlg.Text = "New Row"
+    dlg.Size = dotNetObject "System.Drawing.Size" 280 110
+    dlg.StartPosition = CM_FormStartPos.CenterScreen
+
+    CM_NewRowTextBox = dotNetObject "System.Windows.Forms.TextBox"
+    CM_NewRowTextBox.Location = dotNetObject "System.Drawing.Point" 10 15
+    CM_NewRowTextBox.Size = dotNetObject "System.Drawing.Size" 240 24
+    dlg.Controls.Add CM_NewRowTextBox
+
+    local okBtn = dotNetObject "System.Windows.Forms.Button"
+    okBtn.Text = "Add"
+    okBtn.Location = dotNetObject "System.Drawing.Point" 90 50
+    dotNet.addEventHandler okBtn "Click" CM_OnNewRowOk
+    dlg.Controls.Add okBtn
+
+    dlg.ShowDialog()
+)
+
+fn CM_OnNewRowOk sender e =
+(
+    if CM_NewRowTextBox.Text != "" then CM_AddRowUI CM_NewRowTextBox.Text (color (random 80 220) (random 80 220) (random 80 220))
+    (sender.FindForm()).Close()
+)
+
+fn CM_OnOverlayChkChanged sender e =
+(
+    CM_ToggleOverlay CM_OverlayChk.Checked
+)
+
+fn CM_OnOverlayComboChanged sender e =
+(
+    case CM_OverlayCombo.SelectedIndex of
+    (
+        1: CameraMax_OverlayMode = "thirds"
+        2: CameraMax_OverlayMode = "golden"
+        3: CameraMax_OverlayMode = "triangle"
+        default: CameraMax_OverlayMode = "thirds"
+    )
+    CM_OverlayChk.Checked = (CM_OverlayCombo.SelectedIndex != 0)
+)
+
+fn CM_OnFlipHClick sender e =
+(
+    if selection.count == 1 and isKindOf selection[1] camera then
+    (
+        local cam = selection[1]
+        local cur = (CM_GetFlipH cam) as integer
+        CM_SetProp cam "CM_FlipH" ((1 - cur) as string)
+    )
+)
+
+fn CM_OnFlipVClick sender e =
+(
+    if selection.count == 1 and isKindOf selection[1] camera then
+    (
+        local cam = selection[1]
+        local cur = (CM_GetFlipV cam) as integer
+        CM_SetProp cam "CM_FlipV" ((1 - cur) as string)
+    )
+)
+
+fn CM_OnSearchChanged sender e =
+(
+    local q = toLower CM_SearchBox.Text
+    for ed in CameraMax_Entries do
+    (
+        local visible = (q == "") or (findString (toLower ed.cam.name) q != undefined)
+        ed.picBox.Parent.Visible = visible
+    )
 )
 
 -- Build UI
