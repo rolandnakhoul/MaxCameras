@@ -504,7 +504,7 @@ fn CM_ToggleOverlay state =
     completeRedraw()
 )
 
--- Button/Checkbox handlers
+-- Button/Checkbox handlers - MUST BE DEFINED BEFORE CM_BuildUI()
 fn CM_OnRefreshClick sender e =
 (
     if CM_RefreshRunning == true then CM_StopRefreshQueue() else CM_StartRefreshQueue()
