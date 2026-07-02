@@ -22,6 +22,12 @@ global CM_CtxTargetCam CM_RowYPos
 -- runtime globals
 global CM_RefreshTimer CM_RefreshQueueIndex CM_RefreshRunning
 global CM_RenameCam CM_RenameLabel CM_RenameTextBox CM_NewRowTextBox
+global CM_ColorCls CM_PBSizeMode CM_BorderStyleCls CM_ContentAlignCls CM_MouseButtonsCls CM_FormStartPos CM_DialogResultCls
+
+-- Event handler globals
+global CM_OnRefreshClick CM_OnAddRowClick CM_OnOverlayChkChanged CM_OnOverlayComboChanged
+global CM_OnFlipHClick CM_OnFlipVClick CM_OnSearchChanged
+global CM_OnMiRefreshClick CM_OnMiRenameClick CM_OnMiColorClick
 
 struct CamRowData (rowName, rowColor, groupBox, flowPanel)
 struct CamEntryData (cam, picBox, nameLabel, tempFile)
@@ -103,7 +109,7 @@ fn CM_CollectCameras =
     cams
 )
 
--- Capture a camera viewport to a temp JPG, hide target while capturing, restore state.
+-- Capture a camera viewport to a temp JPG
 fn CM_CaptureThumb cam w:160 h:110 =
 (
     local outFile = CM_TempThumbPath cam.name
@@ -159,7 +165,6 @@ fn CM_CaptureThumb cam w:160 h:110 =
 
     if ok then
     (
-        -- optional flip adjustments stored in userprops
         try
         (
             local flipH = ((CM_GetFlipH cam) as integer) == 1
@@ -233,7 +238,7 @@ fn CM_AddCameraUI cam =
     local ed = CamEntryData cam:cam picBox:pic nameLabel:lbl tempFile:undefined
     append CameraMax_Entries ed
 
-    -- wire to global handlers (no closure)
+    -- wire to global handlers
     dotNet.addEventHandler pic "Click" CM_OnPicClick
     dotNet.addEventHandler pic "DoubleClick" CM_OnPicDblClick
     dotNet.addEventHandler pic "MouseDown" CM_OnPicMouseDown
@@ -328,7 +333,7 @@ fn CM_RenameCamera cam lbl =
     dlg.ShowDialog()
 )
 
--- Refresh queue control (timer)
+-- Refresh queue control
 fn CM_StartRefreshQueue =
 (
     try ( if CM_RefreshTimer != undefined then CM_StopRefreshQueue() ) catch()
@@ -365,7 +370,7 @@ fn CM_RefreshTimer_Tick sender e =
         if CM_RefreshQueueIndex > CameraMax_Entries.count then
         (
             CM_StopRefreshQueue()
-            return
+            return OK
         )
 
         local ed = CameraMax_Entries[CM_RefreshQueueIndex]
